@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<meta charset="UTF-8">
+	<link rel="icon" type="image/x-icon" href="https://assets-cdn.github.com/favicon.ico">
+
+	<title>IOTA SpammerXP</title>
+
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="css/jumbotron-narrow.css">
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+
+	<script type="text/javascript" src="js/lib/jquery.min.js"></script>
+	<script type="text/javascript" src="js/lib/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/lib/iota.min.js"></script>
+	<script type="text/javascript" src="js/lib/curl.min.js"></script>
+	<script type="text/javascript" src="js/lib/EventEmitter.min.js"></script>
+	<script type="text/javascript" src="js/iota.api.extensions.js"></script>
+	<script type="text/javascript" src="js/txSpammer.js"></script>
+	<script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+
+	<div class="container">
+		<div class="header clearfix">
+			<nav>
+				<ul class="nav nav-pills pull-right">
+					<li class="nav-item">
+						<a class="nav-link active" href="" onclick="window.location.reload(true)">Refresh</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="https://github.com/GpanosXP/IOTA-SpammerXP">Source</a>
+					</li>
+				</ul>
+			</nav>
+			<h3 class="text-muted">
+				<img src="IOTA Logo.png" style="height: 41px;">
+				<span style="vertical-align: bottom;">SpammerXP</span>
+			</h3>
+		</div>
+
+		<div class="progress">
+			<div class="progress-bar progress-bar-striped progress-bar-animated active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+		</div>
+
+		<div class="row marketing">
+			<div class="col-md-4 text-center">
+				<h2 id="workerCount">0</h2>
+				<h4>Workers</h4>
+			</div>
+			<div class="col-md-4 text-center">
+				<h2 id="confirmationCount">0</h2>
+				<h4>Confirmed transactions</h4>
+			</div>
+			<div class="col-md-4 text-center">
+				<h2 id="averageConfirmationDuration">0</h2>
+				<h4>Average confirmation duration (seconds)</h4>
+			</div>
+		</div>
+
+		<div class="row marketing">
+			<div class="col-md-4 text-center">
+				<h2 id="workingCount">0</h2>
+				<h4>Workers doing PoW</h4>
+			</div>
+			<div class="col-md-4 text-center">
+				<h2 id="cpmCount">0</h2>
+				<h4>Confirmed transactions per minute</h4>
+			</div>
+			<div class="col-md-4 text-center">
+				<h2 id="timeSpentSpamming">0</h2>
+				<h4>Time Spent Spamming</h4>
+			</div>
+		</div>
+
+		<div class="row marketing">
+			<div class="col-md-12">
+				<div class="panel panel-primary" style="text-align: center">
+					<div class="panel-heading text-center">
+						<h2>Event Log</h2>
+					</div>
+					<pre class="panel-body text-left" id="eventLogContent"></pre>
+				</div>
+			</div>
+		</div>
+
+		<div class="row marketing text-center">
+			<div class="col-md-8 col-md-offset-2">
+				<h2>Does this computer and browser support WebGL2 ?</h2>
+				<h3>
+					You can check <a href="http://webglreport.com/?v=2">here</a>.
+				</h3>
+				<h2>
+					Why is this important ?
+				</h2>
+				<h3>
+					The iota's PoW (Proof of Work) algorithm runs efficiently on a graphics card (GPU), rather than a general processor (CPU).
+					In order to use the GPU from a website / web application like this one, the WebGL framework must be supported.
+					Most modern browsers support WebGL2 (the version used by Iota's official library), but some old harware might not.
+				</h3>
+			</div>
+		</div>
+
+		<div class="row marketing text-center">
+			<div class="col-md-8 col-md-offset-2">
+				<h2>Why spam the network with transactions?</h2>
+				<h3>
+					It speeds up confirmations!
+				</h3>
+				<h3>
+					IOTA is a cryptocurrency whose transaction confirmations are based on subsequent transactions that get added to the tangle. So the more transactions that get added to the tangle, the faster previous transactions get confirmed.
+				</h3>
+				<h3>
+					There are other bottlenecks in play that may limit confirmation time, like network quality, bandwidth, and node reliability.
+				</h3>
+			</div>
+		</div>
+
+		<div class="row marketing text-center">
+			<div class="col-md-8 col-md-offset-2">
+				<h2>How does this work?</h2>
+				<h3>
+					This webapp combines two libraries from the IOTA foundation to work: <a href="https://github.com/iotaledger/iota.lib.js">iota.lib.js</a> for interacting with IOTA nodes and <a href="https://github.com/iotaledger/curl.lib.js">curl.lib.js</a> for doing the PoW (Proof of Work) in your web browser.
+				</h3>
+			</div>
+		</div>
+
+		<div class="row marketing text-center">
+			<div class="col-md-8 col-md-offset-2">
+				<h2>About the Project</h2>
+				<h3>
+					This project is hosted <a href="https://github.com/GpanosXP/IOTA-SpammerXP">on GitHub here</a>.
+				</h3>
+				<h3>
+					It is based upron the original project by <a href="https://github.com/pRizz">Peter Ryszkiewicz</a>, which can be found <a href="https://github.com/pRizz/iota-transaction-spammer-webapp">on GitHub here</a>.
+				</h3>
+			</div>
+		</div>
+
+		<footer class="footer">
+			<p><a href="https://github.com/GpanosXP/IOTA-SpammerXP">Fork this on GitHub!</a></p>
+			<p><a href="https://github.com/GpanosXP/IOTA-SpammerXP/releases">Download this webapp</a></p>
+			<p>Modified and maintained by <a href="https://github.com/GpanosXP">GpanosXP</a></p>
+			<p>Based on <a href="https://github.com/pRizz/iota-transaction-spammer-webapp">original version</a> by <a href="https://github.com/pRizz">Peter Ryszkiewicz</a></p>
+		</footer>
+
+	</div>
+
+</body>
+</html>
