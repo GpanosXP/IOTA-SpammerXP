@@ -117,7 +117,7 @@
         return new Promise((resolve, reject) => {
             self.api.attachToTangle(toApprove.trunkTransaction, toApprove.branchTransaction, minWeightMagnitude, trytes, function(error, attached)
             {
-                if (error) return reject(error)
+                if (error) return reject(error);
 
                 resolve({ caller: self, attached: attached });
             });
