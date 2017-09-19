@@ -3,7 +3,7 @@
  * https://github.com/pRizz/iota-transaction-spammer-webapp
  */
 
-let txSpammer = {
+var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
     // If the owner of a public node does not want to be in the list, they can notify me to remove them.
     providersUrl: "https://gpanosxp.github.io/IOTA-SpammerXP/providers.json",
@@ -127,7 +127,7 @@ let txSpammer = {
 
     txSpammer.addWorker = function()
     {
-        let id = this.workers.length;
+        const id = this.workers.length;
         this.workers.push(undefined);
         this.workerJobs.push(undefined);
         return this.createWorker(id);
@@ -135,7 +135,7 @@ let txSpammer = {
 
     txSpammer.removeWorker = function()
     {
-        let id = this.workers.length - 1;
+        const id = this.workers.length - 1;
         if (id < 0) return false
 
         return this.workers[id].stopSpamming().then((claimedID) => {
@@ -175,8 +175,8 @@ let txSpammer = {
     {
         const count = this.workers.length;
 
-        let promises = new Array(count);
-        for (let i = 0; i < count; i++) promises[i] = this.workers[i].stopSpamming();
+        const promises = new Array(count);
+        for (var i = 0; i < count; i++) promises[i] = this.workers[i].stopSpamming();
 
         return Promise.all(promises);
     }
@@ -208,7 +208,7 @@ txSpammer.worker = function(myID, myProvider)
 
     this.running = false;
 
-    let stopPromise, stopPromiseResolve;
+    var stopPromise, stopPromiseResolve;
 
     this.emitState = function(type, message)
     {
@@ -270,7 +270,7 @@ txSpammer.worker = function(myID, myProvider)
 
     // Iota-related
 
-    let iota, _toApprove, _trytes;
+    var iota, _toApprove, _trytes;
 
     this.initializeIOTA = function()
     {
@@ -299,9 +299,9 @@ txSpammer.worker = function(myID, myProvider)
         );
         if (!synced) return this.emitError("Node is not synced.");
 
-        prepareTx().then((self, toApprove, trytes) => {
-            _toApprove = toApprove;
-            _trytes = trytes;
+        this.prepareTx().then((params) => {
+            _toApprove = params.toApprove;
+            _trytes = params.trytes;
             txSpammer.requestJob(myID);
         });
     };
@@ -324,7 +324,7 @@ txSpammer.worker = function(myID, myProvider)
 
         this.emitState(txSpammer.stateTypes.Net, "Requesting transactions to create confirmations for.");
 
-        let TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), transfers);
+        const TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), transfers);
         TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
         return TxProm1;
     };
@@ -333,17 +333,17 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.emitState(txSpammer.stateTypes.Local, "Performing PoW (Proof of Work)");
 
-        let TxProm2 = iota.sendTxStep2(toApprove, txSpammer.weight, trytes);
+        const TxProm2 = iota.sendTxStep2(toApprove, txSpammer.weight, trytes);
         TxProm2.catch((error) => this.emitError("Error while attaching transactions.", error));
 
-        return TxProm2.then((self, attached) => {
+        return TxProm2.then((params) => {
             this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
             this.jobDone();
 
-            self.sendTxStep3(attached).then((self, finalTxs) => {
+            params.caller.sendTxStep3(params.attached).then((params) => {
 
                 this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
-                txSpammer.eventEmitter.emitEvent('transactionCompleted', [success]);
+                txSpammer.eventEmitter.emitEvent('transactionCompleted', [params.finalTxs]);
 
             }).catch((error) => this.emitError("Error while attaching transactions.", error));
         });

@@ -103,7 +103,7 @@
                 {
                     if (error) return reject(error);
 
-                    resolve(self, toApprove, trytes);
+                    resolve({ caller: self, toApprove: toApprove, trytes: trytes });
                 });
             });
         });
@@ -119,7 +119,7 @@
             {
                 if (error) return reject(error)
 
-                resolve(self, attached);
+                resolve({ caller: self, attached: attached });
             });
         });
     };
@@ -137,7 +137,7 @@
                 var finalTxs = [];
                 attached.forEach((trytes) => finalTxs.push(self.utils.transactionObject(trytes)));
 
-                resolve(self, finalTxs);
+                resolve({ caller: self, finalTxs: finalTxs });
             });
         });
     };
