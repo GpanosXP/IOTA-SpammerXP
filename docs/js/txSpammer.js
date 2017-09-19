@@ -1,9 +1,9 @@
 /**
- * Created by Peter Ryszkiewicz (https://github.com/pRizz) on 9/10/2017.
- * https://github.com/pRizz/iota.transactionSpammer.js
+ * Based upon the projust created by Peter Ryszkiewicz (https://github.com/pRizz) on 9/10/2017:
+ * https://github.com/pRizz/iota-transaction-spammer-webapp
  */
 
-var txSpammer = {
+let txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
     // If the owner of a public node does not want to be in the list, they can notify me to remove them.
     providersUrl: "https://gpanosxp.github.io/IOTA-SpammerXP/providers.json",
@@ -24,6 +24,8 @@ var txSpammer = {
 
     // Workers
     workers: [],
+    workerJobs: [],
+    workerPool: new Pool(),
     workingCounter: 0,
 
     // Enums and misc
@@ -82,7 +84,6 @@ var txSpammer = {
     txSpammer.emitError = function(id, message)
     {
         this.eventEmitter.emitEvent('state', ["Error by worker " + id + ": " + message]);
-        console.log(message);
 
         this.replaceWorker(id).then((newWorker) => newWorker.startSpamming());
     }
@@ -122,21 +123,25 @@ var txSpammer = {
         });
     }
 
-/// Worker pool
+/// Workers
 
     txSpammer.addWorker = function()
     {
-        var id = this.workers.length;
+        let id = this.workers.length;
         this.workers.push(undefined);
+        this.workerJobs.push(undefined);
         return this.createWorker(id);
     }
 
     txSpammer.removeWorker = function()
     {
-        var id = this.workers.length - 1;
+        let id = this.workers.length - 1;
         if (id < 0) return false
 
-        return this.workers[id].stopSpamming().then((claimedID) => this.workers.pop());
+        return this.workers[id].stopSpamming().then((claimedID) => {
+            this.workers.pop();
+            this.workerJobs.pop();
+        });
     }
 
     txSpammer.createWorker = function(id)
@@ -170,32 +175,40 @@ var txSpammer = {
     {
         const count = this.workers.length;
 
-        var promises = new Array(count);
-        for (var i = 0; i < count; i++) promises[i] = this.workers[i].stopSpamming();
+        let promises = new Array(count);
+        for (let i = 0; i < count; i++) promises[i] = this.workers[i].stopSpamming();
 
         return Promise.all(promises);
     }
 
-/// Worker
+    txSpammer.setPoolSize = function(newSize)
+    {
+        const dif = newSize - this.workerPool.count;
+        return dif >= 0 ? this.workerPool.addSlots(dif) : this.workerPool.removeSlots(-dif);
+    }
+
+    txSpammer.requestJob = function(workerID)
+    {
+        this.workerPool.occupy().then((job) => {
+            this.workerJobs[workerID] = job;
+            this.workers[workerID].doJob();
+        });
+    }
+
+    txSpammer.releaseJob = function(workerID)
+    {
+        this.workerPool.free(this.workerJobs[workerID]);
+    }
+
+/// Worker class
 txSpammer.worker = function(myID, myProvider)
 {
     this.ID = myID;
     this.provider = myProvider;
-    this.iota;
 
     this.running = false;
 
-    this.stopPromise;
-    this.stopPromiseResolve;
-
-    // Call this when the worker has stopped
-    this.stopped = function()
-    {
-        if (!this.stopPromise) return;
-
-        this.stopPromise = undefined;
-        this.stopPromiseResolve(myID);
-    }
+    let stopPromise, stopPromiseResolve;
 
     this.emitState = function(type, message)
     {
@@ -230,12 +243,10 @@ txSpammer.worker = function(myID, myProvider)
     this.stopSpamming = function()
     {
         if (!this.running) return Promise.resolve(myID);
-
         this.running = false;
 
-        if (!this.stopPromise) this.stopPromise = new Promise((resolve) => this.stopPromiseResolve = resolve);
-
-        return this.stopPromise;
+        if (!stopPromise) stopPromise = new Promise((resolve) => stopPromiseResolve = resolve);
+        return stopPromise;
     };
     this.restartSpamming = function()
     {
@@ -249,22 +260,33 @@ txSpammer.worker = function(myID, myProvider)
             this.stopped();
         }
     };
+    this.stopped = function()
+    {
+        if (!stopPromise) return;
+
+        stopPromise = undefined;
+        stopPromiseResolve(myID);
+    }
+
+    // Iota-related
+
+    let iota, _toApprove, _trytes;
 
     this.initializeIOTA = function()
     {
         this.emitState(txSpammer.stateTypes.Info, "Initializing IOTA library.");
 
-        this.iota = new IOTA({'provider': myProvider});
-        curl.overrideAttachToTangle(this.iota.api);
+        iota = new IOTA({'provider': myProvider});
+        curl.overrideAttachToTangle(iota.api);
 
-        return this.iota;
+        return iota;
     };
 
     this.syncAndSend = function()
     {
         this.emitState(txSpammer.stateTypes.Net, "Checking if node is synced: " + myProvider);
 
-        return this.iota.api.getNodeInfo((error, success) => this.nodeSyncResponse(error, success));
+        return iota.api.getNodeInfo((error, success) => this.nodeSyncResponse(error, success));
     };
     this.nodeSyncResponse = function(error, success)
     {
@@ -277,39 +299,54 @@ txSpammer.worker = function(myID, myProvider)
         );
         if (!synced) return this.emitError("Node is not synced.");
 
-        this.sendTx();
+        prepareTx().then((self, toApprove, trytes) => {
+            _toApprove = toApprove;
+            _trytes = trytes;
+            txSpammer.requestJob(myID);
+        });
     };
 
-    this.sendTx = function()
+    this.doJob = function()
+    {
+        this.emitWorking(true);
+        this.attachTx(_toApprove, _trytes);
+    }
+
+    this.jobDone = function()
+    {
+        this.emitWorking(false);
+        txSpammer.releaseJob(myID);
+    }
+
+    this.prepareTx = function()
     {
         const transfers = txSpammer.generateTransfers();
 
         this.emitState(txSpammer.stateTypes.Net, "Requesting transactions to create confirmations for.");
 
-        this.iota.sendTransfer3steps(txSpammer.spamSeed, txSpammer.generateDepth(), txSpammer.weight, transfers, {},
-            // After getting tx to approve
-            (error, success) => {
-                if (error) return this.emitError("Error while getting transactions.");
+        let TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), transfers);
+        TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
+        return TxProm1;
+    };
 
-                this.emitState(txSpammer.stateTypes.Local, "Performing PoW (Proof of Work)");
-                this.emitWorking(true);
-            },
-            // After calculating PoW
-            (error, success) => {
-                if (error) return this.emitError("Error while attaching transactions.");
+    this.attachTx = function(toApprove, trytes)
+    {
+        this.emitState(txSpammer.stateTypes.Local, "Performing PoW (Proof of Work)");
 
-                this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
-                this.emitWorking(false);
-            },
-            // After the confirmations have been broadcast
-            (error, success) => {
-                if (error) return this.emitError("Error while attaching transactions.");
+        let TxProm2 = iota.sendTxStep2(toApprove, txSpammer.weight, trytes);
+        TxProm2.catch((error) => this.emitError("Error while attaching transactions.", error));
+
+        return TxProm2.then((self, attached) => {
+            this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
+            this.jobDone();
+
+            self.sendTxStep3(attached).then((self, finalTxs) => {
 
                 this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
                 txSpammer.eventEmitter.emitEvent('transactionCompleted', [success]);
-                this.finished();
-            }
-        );
+
+            }).catch((error) => this.emitError("Error while attaching transactions.", error));
+        });
     };
 };
 
@@ -319,5 +356,8 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.spamSeed = this.generateSeed();
         this.message = this.tritifyURL(this.hostingSite);
+
+        this.setPoolSize(1);
+
         return this.fetchProviders();
     };
