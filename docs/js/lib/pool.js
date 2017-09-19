@@ -6,14 +6,14 @@ function Pool()
     this.occupied = 0;
     this.empty = 0;
 
-    let occupyBacklog = [];
+    let occupyBacklog = new Queue();
     let emptySlotPromise;
     let emptySlotResolve;
 
     let processBacklog = function()
     {
         while (this.empty) {
-            const record = occupyBacklog.pop();
+            const record = occupyBacklog.dequeue();
             if (!record) return fulfillEmptySlotPromise();
 
             this.occupyNow(record[0]);
@@ -88,7 +88,7 @@ function Pool()
     this.occupy = function(occupator)
     {
         if (this.occupyNow(occupator)) return Promise.resolve();
-        else return new Promise((resolve, reject) => { occupyBacklog.push([occupator, resolve]); });
+        else return new Promise((resolve, reject) => { occupyBacklog.enqueue([occupator, resolve]); });
     };
 
     this.free = function(id)
