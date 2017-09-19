@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function()
 {
 
     logElem = getid("eventLogContent");
-    getid("workerCount").textContent = 2;
+    getid("workerCount").textContent = 3;
 
     setInterval(updateGUI, 1000);
 
