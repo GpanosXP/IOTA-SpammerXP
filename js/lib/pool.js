@@ -95,7 +95,7 @@ function Pool()
 
     this.free = function(id)
     {
-        if (!id || id < 0 || id >= this.slots.length) return false;
+        if (!(id >= 0 && id < this.slots.length)) return false;
 
         this.slots[id] = true;
         this.occupied--;
