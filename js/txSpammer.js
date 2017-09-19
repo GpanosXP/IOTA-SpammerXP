@@ -214,7 +214,7 @@ txSpammer.worker = function(myID, myProvider)
     {
         // Do something with Date.now()
         txSpammer.emitState(myID, message);
-    }
+    };
     this.emitError = function(message)
     {
         this.running = false;
@@ -225,11 +225,11 @@ txSpammer.worker = function(myID, myProvider)
         this.stopped();
 
         return false; // Return a "negative" signal
-    }
+    };
     this.emitWorking = function(message)
     {
         txSpammer.emitWorking(myID, message);
-    }
+    };
 
     this.startSpamming = function()
     {
@@ -266,7 +266,7 @@ txSpammer.worker = function(myID, myProvider)
 
         stopPromise = undefined;
         stopPromiseResolve(myID);
-    }
+    };
 
     // Iota-related
 
@@ -299,7 +299,16 @@ txSpammer.worker = function(myID, myProvider)
         );
         if (!synced) return this.emitError("Node is not synced.");
 
-        this.prepareTx().then((params) => {
+        this.prepareTx();
+    };
+
+    this.prepareTx = function()
+    {
+        this.emitState(txSpammer.stateTypes.Net, "Requesting transactions to create confirmations for.");
+
+        const TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), txSpammer.generateTransfers());
+        TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
+        TxProm1.then((params) => {
             _toApprove = params.toApprove;
             _trytes = params.trytes;
             txSpammer.requestJob(myID);
@@ -310,23 +319,6 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.emitWorking(true);
         this.attachTx(_toApprove, _trytes);
-    }
-
-    this.jobDone = function()
-    {
-        this.emitWorking(false);
-        txSpammer.releaseJob(myID);
-    }
-
-    this.prepareTx = function()
-    {
-        const transfers = txSpammer.generateTransfers();
-
-        this.emitState(txSpammer.stateTypes.Net, "Requesting transactions to create confirmations for.");
-
-        const TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), transfers);
-        TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
-        return TxProm1;
     };
 
     this.attachTx = function(toApprove, trytes)
@@ -335,19 +327,35 @@ txSpammer.worker = function(myID, myProvider)
 
         const TxProm2 = iota.sendTxStep2(toApprove, txSpammer.weight, trytes);
         TxProm2.catch((error) => this.emitError("Error while attaching transactions.", error));
-
-        return TxProm2.then((params) => {
-            this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
+        TxProm2.then((params) => {
             this.jobDone();
-
-            params.caller.sendTxStep3(params.attached).then((params) => {
-
-                this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
-                txSpammer.eventEmitter.emitEvent('transactionCompleted', [params.finalTxs]);
-
-            }).catch((error) => this.emitError("Error while attaching transactions.", error));
+            this.broadcastTx(params.attached);
         });
     };
+
+    this.jobDone = function()
+    {
+        this.emitWorking(false);
+        txSpammer.releaseJob(myID);
+    };
+
+    this.broadcastTx = function(attached)
+    {
+        this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
+
+        const TxProm3 = iota.sendTxStep3(attached);
+        TxProm3.catch((error) => this.emitError("Error while attaching transactions.", error));
+        TxProm3.then((params) => this.logAndFinish(params.finalTxs));
+    };
+
+    this.logAndFinish = function(finalTxs)
+    {
+        this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
+
+        txSpammer.eventEmitter.emitEvent('transactionCompleted', [finalTxs]);
+        this.finished();
+    };
+
 };
 
 /// Initialization
