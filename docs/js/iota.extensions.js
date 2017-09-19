@@ -89,13 +89,10 @@
 /// Same as the above, but with all steps given as promises
 
     // Prepare transfers and get transactions to approve
-    IOTA.prototype.sendTxStep1 = function(seed, depth, minWeightMagnitude, transfers, options)
+    IOTA.prototype.sendTxStep1 = function(seed, depth, transfers, options)
     {
         var self = this;
         options = options || {};
-
-        const inputsValid = arguments.length >= 4 && self.valid.isValue(depth) && self.valid.isValue(minWeightMagnitude);
-        if (!inputsValid) return Promise.reject();
 
         return new Promise((resolve, reject) => {
             self.api.prepareTransfers(seed, transfers, options, function(error, trytes)
@@ -106,7 +103,7 @@
                 {
                     if (error) return reject(error);
 
-                    resolve(self, toApprove, minWeightMagnitude, trytes);
+                    resolve(self, toApprove, trytes);
                 });
             });
         });
@@ -115,6 +112,8 @@
     // Attach to tangle
     IOTA.prototype.sendTxStep2 = function(toApprove, minWeightMagnitude, trytes)
     {
+        var self = this;
+
         return new Promise((resolve, reject) => {
             self.api.attachToTangle(toApprove.trunkTransaction, toApprove.branchTransaction, minWeightMagnitude, trytes, function(error, attached)
             {
@@ -128,6 +127,8 @@
     // Broadcast transaction
     IOTA.prototype.sendTxStep3 = function(attached)
     {
+        var self = this;
+
         return new Promise((resolve, reject) => {
             self.api.storeAndBroadcast(attached, function(error, success)
             {
