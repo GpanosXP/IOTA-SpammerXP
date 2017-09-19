@@ -3,7 +3,8 @@
 
 /// sendTransfer in 3 steps
 
-    IOTA.prototype.sendTransfer3steps = function(seed, depth, minWeightMagnitude, transfers, options, callback1, callback2, callback3) {
+    IOTA.prototype.sendTransfer3steps = function(seed, depth, minWeightMagnitude, transfers, options, callback1, callback2, callback3)
+    {
         // Copy of iota.api.sendTransfer, but with 2 extra parameters (callback2, callback3),
         // and using sendTrytes3steps instead of iota.api.sendTrytes.
         // To avoid potential errors, the parameter 'options' is mandatory,
@@ -31,9 +32,10 @@
 
             self.sendTrytes3steps(trytes, depth, minWeightMagnitude, callback1, callback2, callback3);
         })
-    }
+    };
 
-    IOTA.prototype.sendTrytes3steps = function(trytes, depth, minWeightMagnitude, callback1, callback2, callback3) {
+    IOTA.prototype.sendTrytes3steps = function(trytes, depth, minWeightMagnitude, callback1, callback2, callback3)
+    {
         // Does exactly what iota.api.sendTrytes() does, but in three steps:
         // First, it gets the transactions to approve without attaching to tangle (i.e. without doing PoW), and calls callback1.
         // Second, it attaches to the Tangle (does PoW) and calls callback2.
@@ -82,7 +84,7 @@
                 })
             })
         })
-    }
+    };
 
 /// Same as the above, but with all steps given as promises
 
@@ -121,7 +123,7 @@
                 resolve(self, attached);
             });
         });
-    }
+    };
 
     // Broadcast transaction
     IOTA.prototype.sendTxStep3 = function(attached)
@@ -132,9 +134,9 @@
                 if (error) return reject(error);
 
                 var finalTxs = [];
-                attached.forEach((trytes) => finalTxs.push(self.utils.transactionObject(trytes));
+                attached.forEach((trytes) => finalTxs.push(self.utils.transactionObject(trytes)));
 
                 resolve(self, finalTxs);
             });
         });
-    }
+    };
