@@ -6,7 +6,7 @@
 var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
     // If the owner of a public node does not want to be in the list, they can notify me to remove them.
-    providersUrl: "https://gpanosxp.github.io/IOTA-SpammerXP/providers.json",
+    providersUrl: "https://gpanosxp.github.io/IOTA-SpammerXP/docs/providers.json",
     httpProviders: [],
     httpsProviders: [],
     validProviders: [],
