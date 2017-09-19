@@ -125,6 +125,13 @@ var txSpammer = {
 
 /// Workers
 
+    txSpammer.getRunningCount = function()
+    {
+        var counter = 0;
+        for (var i = this.workers.length - 1; i >= 0; i--) if (this.workers[i].running) counter++;
+        return counter;
+    }
+
     txSpammer.addWorker = function()
     {
         const id = this.workers.length;
@@ -219,7 +226,6 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.running = false;
 
-        txSpammer.emitWorking(false);
         txSpammer.emitError(myID, message);
 
         this.stopped();
@@ -309,6 +315,7 @@ txSpammer.worker = function(myID, myProvider)
         const TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), txSpammer.generateTransfers());
         TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
         TxProm1.then((params) => {
+            this.emitState(txSpammer.stateTypes.Local, "Waiting for job vacancy in worker pool.");
             _toApprove = params.toApprove;
             _trytes = params.trytes;
             txSpammer.requestJob(myID);
