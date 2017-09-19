@@ -6,8 +6,20 @@ function Pool()
     this.occupied = 0;
     this.empty = 0;
 
+    let occupyBacklog = [];
     let emptySlotPromise;
     let emptySlotResolve;
+
+    let processBacklog = function()
+    {
+        while (this.empty) {
+            const record = occupyBacklog.pop();
+            if (!record) return fulfillEmptySlotPromise();
+
+            this.occupyNow(record[0]);
+            record[1](); // resolve promise
+        }
+    };
 
     let fulfillEmptySlotPromise = function()
     {
@@ -41,8 +53,11 @@ function Pool()
             this.empty++;
         }
 
+        processBacklog();
+
         return true;
     };
+
     this.removeSlots = function(count)
     {
         if (!(count && count > 0)) return false;
@@ -58,7 +73,7 @@ function Pool()
         return true;
     };
 
-    this.occupy = function(occupator)
+    this.occupyNow = function(occupator)
     {
         if (!this.empty) return false;
 
@@ -69,6 +84,13 @@ function Pool()
         this.occupied++;
         this.empty--;
     };
+
+    this.occupy = function(occupator)
+    {
+        if (this.occupyNow(occupator)) return Promise.resolve();
+        else return new Promise((resolve, reject) => { occupyBacklog.push([occupator, resolve]); });
+    };
+
     this.free = function(id)
     {
         if (!id || id < 0 || id >= this.slots.lenght) return false;
@@ -79,8 +101,8 @@ function Pool()
         popLastSlots();
 
         if (id < this.count) {
-            this.empty--;
-            fulfillEmptySlotPromise();
+            this.empty++;
+            processBacklog();
         }
     };
 
