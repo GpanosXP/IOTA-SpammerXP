@@ -1,7 +1,7 @@
 
 function Pool()
 {
-    this.slots = [];
+    this.slots = []; // True means empty, false means occupied
     this.count = 0;
     this.occupied = 0;
     this.empty = 0;
@@ -13,11 +13,10 @@ function Pool()
     let processBacklog = function()
     {
         while (this.empty) {
-            const record = occupyBacklog.dequeue();
-            if (!record) return fulfillEmptySlotPromise();
+            const resolve = occupyBacklog.dequeue();
+            if (!resolve) return fulfillEmptySlotPromise();
 
-            this.occupyNow(record[0]);
-            record[1](); // resolve promise
+            resolve(this.occupyNow()); // resolve promise
         }
     };
 
@@ -31,12 +30,12 @@ function Pool()
 
     let popLastSlots = function()
     {
-        while (this.count < this.slots.lenght && this.slots[this.slots.lenght - 1] === undefined) this.slots.pop();
+        while (this.count < this.slots.lenght && this.slots[this.slots.lenght - 1]) this.slots.pop();
     };
 
     let findEmpty = function()
     {
-        for (let i = 0; i < this.count; i++) if (slots[i] === undefined) return i;
+        for (let i = 0; i < this.count; i++) if (slots[i]) return i;
         return -1;
     };
 
@@ -47,9 +46,9 @@ function Pool()
         let i = this.count;
         this.count += count;
 
-        for (; i < this.slots.lenght; i++) if (this.slots[i] === undefined) this.empty++;
+        for (; i < this.slots.lenght; i++) if (this.slots[i]) this.empty++;
         for (; i < this.count; i++) {
-            this.slots.push(undefined);
+            this.slots.push(true);
             this.empty++;
         }
 
@@ -66,36 +65,39 @@ function Pool()
         let i = this.count - 1;
         this.count -= count;
 
-        for (; i >= this.count; i--) if (this.slots[i] === undefined) this.empty--;
+        for (; i >= this.count; i--) if (this.slots[i]) this.empty--;
 
         popLastSlots();
 
         return true;
     };
 
-    this.occupyNow = function(occupator)
+    this.occupyNow = function()
     {
-        if (!this.empty) return false;
+        if (!this.empty) return -1;
 
         const id = findEmpty();
-        if (id < 0) return false;
+        if (id < 0) return -1;
 
-        this.slots[id] = occupator;
+        this.slots[id] = false;
         this.occupied++;
         this.empty--;
+
+        return id;
     };
 
-    this.occupy = function(occupator)
+    this.occupy = function()
     {
-        if (this.occupyNow(occupator)) return Promise.resolve();
-        else return new Promise((resolve, reject) => { occupyBacklog.enqueue([occupator, resolve]); });
+        let id = this.occupyNow();
+        if (id >= 0) return Promise.resolve(id);
+        else return new Promise((resolve, reject) => { occupyBacklog.enqueue(resolve); });
     };
 
     this.free = function(id)
     {
         if (!id || id < 0 || id >= this.slots.lenght) return false;
 
-        this.slots[id] = undefined;
+        this.slots[id] = true;
         this.occupied--;
 
         popLastSlots();
