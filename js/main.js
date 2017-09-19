@@ -26,8 +26,11 @@
 
 /// Constants
 
-    const iotasearchBaseURL = 'https://iotasear.ch/hash/'
-    const iotatipsBaseURL = 'http://www.iota.tips/search/?kind=transaction&hash='
+    const explorers = [
+        [ "thetangle.org", "https://thetangle.org/transaction/" ],
+        [ "iotasear.ch", "https://iotasear.ch/hash/" ],
+        [ "iota.tips", "http://www.iota.tips/search/?kind=transaction&hash=" ]
+    ];
     const hostingSite = 'https://github.com/GpanosXP/iota-transaction-spammer-webapp';
     const hostingSiteTritified = txSpammer.tritifyURL(hostingSite);
     txSpammer.message = hostingSiteTritified;
@@ -54,17 +57,21 @@
         var logline = document.createElement("div");
         logline.innerHTML = message;
         logElem.appendChild(logline);
+        logElem.scrollTop = logElem.scrollHeight;
     }
 
     txSpammer.eventEmitter.on('state', function(state) {
         console.log(state);
-        log("<div>" + state + "</div>");
+        log(state);
     });
 
     txSpammer.eventEmitter.on('transactionCompleted', function(success) {
         txCounter++;
         success.forEach((element) => {
-            log("<div>New transaction created: <a href=\"" + iotasearchBaseURL + element.hash + "\">iotasear.ch</a> <a href=\"" + iotatipsBaseURL + element.hash + "\">iota.tips</a></div>");
+            const hash = element.hash;
+            var logline = "New transaction created:";
+            explorers.forEach((exp) => logline += " <a href=\"" + exp[1] + hash + "\">" + exp[0] + "</a>");
+            log(logline);
         });
     });
 
@@ -88,7 +95,7 @@
     function forceClose() { closing = true; window.close(); }
     function dontClose() { closing = false; }
     window.onbeforeunload = function(e) {
-        if (closing) return;
+        if (closing || !txSpammer.getRunningCount()) return;
         closing = true;
 
         // TODO: add proper message in the webpage (modal ?)
@@ -107,10 +114,14 @@ document.addEventListener("DOMContentLoaded", function()
 {
 
     logElem = getid("eventLogContent");
-    getid("workerCount").textContent = 1;
+    getid("workerCount").textContent = 2;
 
     setInterval(updateGUI, 1000);
 
-    txSpammer.Init().then(() => txSpammer.addWorker().startSpamming());
+    txSpammer.Init().then(() => {
+        txSpammer.addWorker().startSpamming();
+        txSpammer.addWorker().startSpamming();
+        txSpammer.addWorker().startSpamming();
+    });
 
 });
