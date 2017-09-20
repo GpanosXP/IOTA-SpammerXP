@@ -250,8 +250,11 @@ txSpammer.worker = function(myID, myProvider)
     };
     this.stopSpamming = function()
     {
-        if (!this.running || !this.working) return Promise.resolve(myID);
         this.running = false;
+        if (!this.working) {
+            this.jobDone(); // take out of pool
+            return Promise.resolve(myID);
+        }
 
         if (!stopPromise) stopPromise = new Promise((resolve) => stopPromiseResolve = resolve);
         return stopPromise;
