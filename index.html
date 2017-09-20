@@ -28,7 +28,7 @@
 <body>
 
 	<div class="container">
-		<div class="header clearfix">
+		<div class="header">
 			<nav>
 				<ul class="nav nav-pills pull-right">
 					<li class="nav-item">
@@ -41,7 +41,9 @@
 			</nav>
 			<h3 class="text-muted">
 				<img src="IOTA_Logo.png" style="height: 41px;">
-				<span style="vertical-align: bottom;">SpammerXP</span>
+				<span style="vertical-align: bottom; margin-right: 20px;">SpammerXP</span>
+				<button id="btnStart" class="btn btn-success" onclick="start()">Start Spamming</button>
+				<button id="btnStartLocal" class="btn btn-success" onclick="startLocal()">Start Local Spamming</button>
 			</h3>
 		</div>
 
@@ -87,59 +89,60 @@
 
 		<div class="row marketing text-center">
 			<div class="col-md-8 col-md-offset-2">
-				<h2>Does this computer and browser support WebGL2 ?</h2>
-				<h3>
+				<h3>Does this computer and browser support WebGL2 ?</h3>
+				<p>
 					You can check <a href="http://webglreport.com/?v=2">here</a>.
-				</h3>
-				<h2>
-					Why is this important ?
-				</h2>
+					<br> If it doesn't, this app will probably not work.
+				</p>
 				<h3>
+					But, why is it important ?
+				</h3>
+				<p>
 					The iota's PoW (Proof of Work) algorithm runs more efficiently on a graphics card (GPU), rather than a general processor (CPU).
 					In order to use the GPU from a website / web application like this one, the WebGL framework must be supported.
 					Most modern browsers support WebGL2 (the version used by Iota's official library), but some old harware might not.
-				</h3>
+				</p>
 			</div>
 		</div>
 
 		<div class="row marketing text-center">
 			<div class="col-md-8 col-md-offset-2">
-				<h2>Why spam the network with transactions?</h2>
-				<h3>
+				<h3>Why spam the network with transactions?</h3>
+				<p>
 					It speeds up confirmations!
-				</h3>
-				<h3>
+				</p>
+				<p>
 					IOTA is a cryptocurrency whose transaction confirmations are based on subsequent transactions that get added to the tangle. So the more transactions that get added to the tangle, the faster previous transactions get confirmed.
-				</h3>
-				<h3>
+				</p>
+				<p>
 					There are other bottlenecks in play that may limit confirmation time, like network quality, bandwidth, and node reliability.
-				</h3>
+				</p>
 			</div>
 		</div>
 
 		<div class="row marketing text-center">
 			<div class="col-md-8 col-md-offset-2">
-				<h2>How does this work?</h2>
-				<h3>
+				<h3>How does this work?</h3>
+				<p>
 					This webapp combines two libraries from the IOTA foundation to work: <a href="https://github.com/iotaledger/iota.lib.js">iota.lib.js</a> for interacting with IOTA nodes and <a href="https://github.com/iotaledger/curl.lib.js">curl.lib.js</a> for doing the PoW (Proof of Work) in your web browser.
-				</h3>
+				</p>
 			</div>
 		</div>
 
 		<div class="row marketing text-center">
 			<div class="col-md-8 col-md-offset-2">
-				<h2>About the Project</h2>
-				<h3>
-					This project is hosted <a href="https://github.com/GpanosXP/IOTA-SpammerXP">on GitHub here</a>.
-				</h3>
-				<h3>
-					It is based upron the original project by <a href="https://github.com/pRizz">Peter Ryszkiewicz</a>, which can be found <a href="https://github.com/pRizz/iota-transaction-spammer-webapp">on GitHub here</a>.
-				</h3>
+				<h3>About the Project</h3>
+				<p>
+					This project is maintained by <a href="https://github.com/GpanosXP">GpanosXP</a> and is hosted <a href="https://github.com/GpanosXP/IOTA-SpammerXP">on GitHub here</a>.
+				</p>
+				<p>
+					It is based upon the original project by <a href="https://github.com/pRizz">Peter Ryszkiewicz</a>, which can be found <a href="https://github.com/pRizz/iota-transaction-spammer-webapp">on GitHub here</a>.
+				</p>
 			</div>
 		</div>
 
 		<footer class="footer">
-			<p><a href="https://github.com/GpanosXP/IOTA-SpammerXP">Fork this on GitHub!</a></p>
+			<p><a href="https://github.com/GpanosXP/IOTA-SpammerXP">Find this on GitHub!</a></p>
 			<p><a href="https://github.com/GpanosXP/IOTA-SpammerXP/releases">Download this webapp</a></p>
 			<p>Modified and maintained by <a href="https://github.com/GpanosXP">GpanosXP</a></p>
 			<p>Based on <a href="https://github.com/pRizz/iota-transaction-spammer-webapp">original version</a> by <a href="https://github.com/pRizz">Peter Ryszkiewicz</a></p>

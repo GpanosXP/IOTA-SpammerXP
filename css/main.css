@@ -2,3 +2,8 @@
 body {
 	color: #4a4a4a;
 }
+
+p {
+    font-size: 18px;
+    line-height: 26px;
+}
