@@ -95,6 +95,7 @@
     function forceClose() { closing = true; window.close(); }
     function dontClose() { closing = false; }
     window.onbeforeunload = function(e) {
+        return; // TODO: add proper message, then remove this
         if (closing || !txSpammer.getRunningCount()) return;
         closing = true;
 
