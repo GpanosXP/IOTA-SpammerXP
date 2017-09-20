@@ -113,16 +113,45 @@
 /// Initialization
 document.addEventListener("DOMContentLoaded", function()
 {
-
     logElem = getid("eventLogContent");
+
     getid("workerCount").textContent = 3;
-
-    setInterval(updateGUI, 1000);
-
     txSpammer.Init().then(() => {
-        txSpammer.addWorker().startSpamming();
-        txSpammer.addWorker().startSpamming();
-        txSpammer.addWorker().startSpamming();
+        txSpammer.addWorker();
+        txSpammer.addWorker();
+        txSpammer.addWorker();
     });
-
 });
+
+var guiIntevalID;
+function start()
+{
+    getid("btnStartLocal").disabled = true;
+    getid("btnStart").onclick = stop;
+    getid("btnStart").textContent = "Stop Spamming";
+    getid("btnStart").classList.remove("btn-success");
+    getid("btnStart").classList.add("btn-danger");
+
+    txSpammer.startAll();
+    guiIntevalID = setInterval(updateGUI, 1000);
+}
+
+function startLocal()
+{
+    alert("Local spamming comming soon");
+}
+
+function stop()
+{
+    getid("btnStart").disabled = true;
+    getid("btnStart").textContent = "Stopping ...";
+    txSpammer.stopAll().then(() => {
+        clearInterval(guiIntevalID);
+        getid("btnStart").onclick = start;
+        getid("btnStart").textContent = "Resume Spamming";
+        getid("btnStart").classList.remove("btn-danger");
+        getid("btnStart").classList.add("btn-success");
+        getid("btnStart").disabled = false;
+        getid("btnStartLocal").disabled = false;
+    });
+}

@@ -85,7 +85,7 @@ var txSpammer = {
     {
         this.eventEmitter.emitEvent('state', ["Error by worker " + id + ": " + message]);
 
-        this.replaceWorker(id).then((newWorker) => newWorker.startSpamming());
+        if (this.workers[id].running) this.replaceWorker(id).then((newWorker) => newWorker.startSpamming());
     }
     txSpammer.emitWorking = function(id, isWorking)
     {
@@ -176,6 +176,10 @@ var txSpammer = {
         });
     }
 
+    txSpammer.startAll = function()
+    {
+        for (var i = 0; i < this.workers.length; i++) this.workers[i].startSpamming();
+    }
     // Tells all workers to stop and returns a promise
     // that is resolved when all workers have stopped.
     txSpammer.stopAll = function()
@@ -224,10 +228,9 @@ txSpammer.worker = function(myID, myProvider)
     };
     this.emitError = function(message)
     {
-        this.running = false;
-
         txSpammer.emitError(myID, message);
 
+        this.running = false;
         this.stopped();
 
         return false; // Return a "negative" signal
