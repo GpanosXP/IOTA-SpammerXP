@@ -35,11 +35,10 @@
     const hostingSiteTritified = txSpammer.tritifyURL(hostingSite);
     txSpammer.message = hostingSiteTritified;
 
-    const startMilliseconds = Date.now();
-
 // GUI stuff
 
-    txCounter = 0;
+    var startMilliseconds;
+    var txCounter;
     function updateGUI()
     {
         const totalTime = Date.now() - startMilliseconds;
@@ -133,6 +132,8 @@ function start()
     getid("btnStart").classList.add("btn-danger");
 
     txSpammer.startAll();
+    startMilliseconds = Date.now();
+    txCounter = 0;
     guiIntevalID = setInterval(updateGUI, 1000);
 }
 
@@ -148,7 +149,7 @@ function stop()
     txSpammer.stopAll().then(() => {
         clearInterval(guiIntevalID);
         getid("btnStart").onclick = start;
-        getid("btnStart").textContent = "Resume Spamming";
+        getid("btnStart").textContent = "Restart Spamming";
         getid("btnStart").classList.remove("btn-danger");
         getid("btnStart").classList.add("btn-success");
         getid("btnStart").disabled = false;
