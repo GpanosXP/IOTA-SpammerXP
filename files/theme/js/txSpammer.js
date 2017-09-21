@@ -281,10 +281,11 @@ txSpammer.worker = function(myID, myProvider)
     // Iota-related
 
     var iota;
-    var tipHashes;
-    var tips;
-    var usefulTips;
-    var _toApprove, _trytes;
+    var tipHashes = [];
+    var tips = [];
+    var usefulTips = [];
+    var _toApprove = {};
+    var _trytes = "";
 
     this.initializeIOTA = function()
     {
@@ -346,14 +347,19 @@ txSpammer.worker = function(myID, myProvider)
         if (!this.running) return this.finished();
         this.emitState(txSpammer.stateTypes.Local, "Processing tips");
 
-        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value != 0) usefulTips.push(tips[i]);
+        const log2 = document.getElementById("log2");
+        usefulTips = [];
+        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value != 0) {
+            usefulTips.push(tips[i]);
+            log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
+        }
 
         const tot = tips.length;
-        const use = useful.length;
-        var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * tot / use) / 10 + "%";
+        const use = usefulTips.length;
+        var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * use / tot) / 10 + "%";
         this.emitState(txSpammer.stateTypes.Info, message);
 
-        prepareTx();
+        this.prepareTx();
     };
 
     this.prepareTx = function()
@@ -388,8 +394,8 @@ txSpammer.worker = function(myID, myProvider)
         const prom = iota.getTransactionsObjectsAsync([toApprove.trunkTransaction, toApprove.branchTransaction]);
         prom.catch((error) => this.attachTx(toApprove));
         prom.then((txObjects) => {
-            document.getElementById("tx_values").textContent += "\nTx values: " + txObjects[0].value + ", " + txObjects[1].value
-                                                                + ", tags: " + txObjects[0].tag + ", " + txObjects[1].tag;
+            document.getElementById("log2").textContent += "\nTx values: " + txObjects[0].value + ", " + txObjects[1].value
+                                                        + ", tags: " + txObjects[0].tag + ", " + txObjects[1].tag;
             if (txObjects[0].value || txObjects[1].value) this.awaitToAttach(toApprove);
             else this.requestTxs();
         });
@@ -440,7 +446,7 @@ txSpammer.worker = function(myID, myProvider)
 
         const prom = iota.storeAndBroadcastAsync(attached);
         prom.catch((error) => this.emitError("Error while broadcasting transactions.", error));
-        prom.then((finalTxs) => this.logAndFinish(finalTxs));
+        prom.then((report) => this.logAndFinish(attached));
     };
 
     this.logAndFinish = function(finalTxs)
