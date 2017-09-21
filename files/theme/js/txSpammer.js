@@ -427,7 +427,12 @@ txSpammer.worker = function(myID, myProvider)
 
     this.doJob = function()
     {
-        this.working = true;
+        if (!this.running) {
+            this.jobDone();
+            this.finished();
+            return;
+        }
+
         this.emitWorking(true);
         this.attachTx();
     };
