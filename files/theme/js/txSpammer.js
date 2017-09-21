@@ -16,7 +16,7 @@ var txSpammer = {
     // Transaction-related data
     spamSeed: "",
     hostingSite: 'https://github.com/GpanosXP/IOTA-SpammerXP',
-    tag: "IOTA9SPAMMERXP9AAA",
+    tag: "IOTA9SPAMMERXP9AAB",
     message: "",
     transfersPerBundle: 1,
     weight: 15,
