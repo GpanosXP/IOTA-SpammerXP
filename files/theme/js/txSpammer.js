@@ -324,7 +324,7 @@ txSpammer.worker = function(myID, myProvider)
         const prom = iota.getTipsAsync();
         prom.catch((error) => this.emitError("Error while fetching tip hashes.", error));
         prom.then((tips) => {
-            tipHashes = tips.slice(0, 200); // Cap at 200 to reduce load
+            tipHashes = tips.slice(0, 2000); // Cap at 2000 to reduce load
             this.fetchTipObjects();
         });
     };
@@ -454,7 +454,7 @@ txSpammer.worker = function(myID, myProvider)
         this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
 
         var finalTxs = [];
-        attached.forEach((trytes) => finalTxs.push(this.iota.utils.transactionObject(trytes)));
+        attached.forEach((trytes) => finalTxs.push(iota.utils.transactionObject(trytes)));
 
         txSpammer.eventEmitter.emitEvent('transactionCompleted', [finalTxs]);
         this.finished();
