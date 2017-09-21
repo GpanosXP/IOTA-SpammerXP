@@ -37,6 +37,7 @@
 
 // GUI stuff
 
+    var started;
     var startMilliseconds;
     var txCounter;
     function updateGUI()
@@ -76,6 +77,8 @@
 
     txSpammer.eventEmitter.on('working', function(count) {
         getid("workingCount").textContent = count;
+        if (!started) startMilliseconds = Date.now();
+        started = true;
         if (count) {
             // Stop gpu intensive tasks
             var elems = document.getElementsByClassName('progress-bar-animated')
@@ -132,7 +135,6 @@ function start()
     getid("btnStart").classList.add("btn-danger");
 
     txSpammer.startAll();
-    startMilliseconds = Date.now();
     txCounter = 0;
     guiIntevalID = setInterval(updateGUI, 1000);
 }
@@ -147,6 +149,7 @@ function stop()
     getid("btnStart").disabled = true;
     getid("btnStart").textContent = "Stopping ...";
     txSpammer.stopAll().then(() => {
+        started = false;
         clearInterval(guiIntevalID);
         getid("btnStart").onclick = start;
         getid("btnStart").textContent = "Restart Spamming";
