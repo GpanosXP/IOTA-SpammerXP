@@ -349,7 +349,7 @@ txSpammer.worker = function(myID, myProvider)
 
         const log2 = document.getElementById("log2");
         usefulTips = [];
-        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value != 0) {
+        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value > 1) {
             usefulTips.push(tips[i]);
             log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
         }
