@@ -2,6 +2,20 @@
 
 /// Promisified version of IOTA api functions
 
+    IOTA.prototype.getTipsAsync = function()
+    {
+        return new Promise((resolve, reject) => {
+            this.api.getTips((error, tips) => error ? reject(error) : resolve(tips))
+        });
+    };
+
+    IOTA.prototype.getNodeInfoAsync = function()
+    {
+        return new Promise((resolve, reject) => {
+            this.api.getNodeInfo((error, nodeInfo) => error ? reject(error) : resolve(nodeInfo))
+        });
+    };
+
     IOTA.prototype.prepareTransfersAsync = function(seed, transfers, options)
     {
         return new Promise((resolve, reject) =>
