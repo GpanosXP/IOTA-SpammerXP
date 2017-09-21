@@ -1,143 +1,38 @@
 // Iota api extensions
-// Copied from iota.api.js and modified to add features.
 
-/// sendTransfer in 3 steps
+/// Promisified version of IOTA api functions
 
-    IOTA.prototype.sendTransfer3steps = function(seed, depth, minWeightMagnitude, transfers, options, callback1, callback2, callback3)
+    IOTA.prototype.prepareTransfersAsync = function(seed, transfers, options)
     {
-        // Copy of iota.api.sendTransfer, but with 2 extra parameters (callback2, callback3),
-        // and using sendTrytes3steps instead of iota.api.sendTrytes.
-        // To avoid potential errors, the parameter 'options' is mandatory,
-        // unlike the original sendTransfer, where it could be omitted.
-        // If no 'options' are present, simply use {} as 'options' when calling.
-        var self = this;
-
-        // Validity check for number of arguments
-        if (arguments.length != 8) {
-            return callback1(new Error("Invalid number of arguments"));
-        }
-
-        // Check if correct depth and minWeightMagnitude
-        // inputValidator <-> self.valid
-        if (!self.valid.isValue(depth) || !self.valid.isValue(minWeightMagnitude)) {
-
-            return callback(errors.invalidInputs());
-        }
-
-        self.api.prepareTransfers(seed, transfers, options, function(error, trytes) {
-
-            if (error) {
-                return callback1(error)
-            }
-
-            self.sendTrytes3steps(trytes, depth, minWeightMagnitude, callback1, callback2, callback3);
-        })
+        return new Promise((resolve, reject) =>
+            this.api.prepareTransfers(seed, transfers, options, (error, trytes) => error ? reject(error) : resolve(trytes))
+        );
     };
 
-    IOTA.prototype.sendTrytes3steps = function(trytes, depth, minWeightMagnitude, callback1, callback2, callback3)
+    IOTA.prototype.getTransactionsToApproveAsync = function(depth)
     {
-        // Does exactly what iota.api.sendTrytes() does, but in three steps:
-        // First, it gets the transactions to approve without attaching to tangle (i.e. without doing PoW), and calls callback1.
-        // Second, it attaches to the Tangle (does PoW) and calls callback2.
-        // Finally, it broadcasts the confirmations (PoW) and returns with callback3.
-        // This allows for other tasks (logging, resource management, etc) to be done by callback1,
-        // just before starting the (computationally expensive) PoW calculation.
-        // And by measuring the difference in time between the callbacks,
-        // we can get a good measurement of the time the network calls and PoW take.
-
-        var self = this;
-
-        // Inputs already ok, because we are called by sendTransfer3steps().
-
-        // Get branch and trunk
-        self.api.getTransactionsToApprove(depth, function(error, toApprove) {
-
-            if (error) {
-                return callback1(error)
-            }
-
-            callback1(null, toApprove);
-
-            // attach to tangle - do pow
-            self.api.attachToTangle(toApprove.trunkTransaction, toApprove.branchTransaction, minWeightMagnitude, trytes, function(error, attached) {
-
-                if (error) {
-                    return callback2(error)
-                }
-
-                callback2(null, attached);
-
-                // Broadcast and store tx
-                self.api.storeAndBroadcast(attached, function(error, success) {
-
-                    if (error) {
-                        return callback3(error);
-                    }
-
-                    var finalTxs = [];
-
-                    attached.forEach(function(trytes) {
-                        finalTxs.push(self.utils.transactionObject(trytes)); // utils <-> self.utils
-                    })
-
-                    return callback3(null, finalTxs);
-                })
-            })
-        })
+        return new Promise((resolve, reject) =>
+            this.api.getTransactionsToApprove(depth, (error, toApprove) => error ? reject(error) : resolve(toApprove))
+        );
     };
 
-/// Same as the above, but with all steps given as promises
-
-    // Prepare transfers and get transactions to approve
-    IOTA.prototype.sendTxStep1 = function(seed, depth, transfers, options)
+    IOTA.prototype.getTransactionsObjectsAsync = function(hashes)
     {
-        var self = this;
-        options = options || {};
-
-        return new Promise((resolve, reject) => {
-            self.api.prepareTransfers(seed, transfers, options, function(error, trytes)
-            {
-                if (error) return reject(error);
-
-                self.api.getTransactionsToApprove(depth, function(error, toApprove)
-                {
-                    if (error) return reject(error);
-
-                    resolve({ caller: self, toApprove: toApprove, trytes: trytes });
-                });
-            });
-        });
+        return new Promise((resolve, reject) =>
+            this.api.getTransactionsObjects(hashes, (error, txObjects) => error ? reject(error) : resolve(txObjects))
+        );
     };
 
-    // Attach to tangle
-    IOTA.prototype.sendTxStep2 = function(toApprove, minWeightMagnitude, trytes)
+    IOTA.prototype.attachToTangleAsync = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes)
     {
-        var self = this;
-
-        return new Promise((resolve, reject) => {
-            self.api.attachToTangle(toApprove.trunkTransaction, toApprove.branchTransaction, minWeightMagnitude, trytes, function(error, attached)
-            {
-                if (error) return reject(error);
-
-                resolve({ caller: self, attached: attached });
-            });
-        });
+        return new Promise((resolve, reject) =>
+            this.api.attachToTangle(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, (error, attached) => error ? reject(error) : resolve(attached))
+        );
     };
 
-    // Broadcast transaction
-    IOTA.prototype.sendTxStep3 = function(attached)
+    IOTA.prototype.storeAndBroadcastAsync = function(trytes)
     {
-        var self = this;
-
-        return new Promise((resolve, reject) => {
-            self.api.storeAndBroadcast(attached, function(error, success)
-            {
-                if (error) return reject(error);
-
-                var finalTxs = [];
-                attached.forEach((trytes) => finalTxs.push(self.utils.transactionObject(trytes)));
-
-                resolve({ caller: self, finalTxs: finalTxs });
-            });
-        });
+        return new Promise((resolve, reject) =>
+            this.api.storeAndBroadcast(trytes, (error, finalTxs) => error ? reject(error) : resolve(finalTxs))
+        );
     };
