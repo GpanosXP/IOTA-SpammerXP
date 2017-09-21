@@ -20,6 +20,7 @@ var txSpammer = {
     message: "",
     transfersPerBundle: 1,
     weight: 15,
+    tipCount: 1000, // tips to load for selection
 
     // Events
     eventEmitter: new EventEmitter(),
@@ -325,7 +326,11 @@ txSpammer.worker = function(myID, myProvider)
         const prom = iota.getTipsAsync();
         prom.catch((error) => this.emitError("Error while fetching tip hashes.", error));
         prom.then((tips) => {
-            tipHashes = tips.slice(0, 2000); // Cap at 2000 to reduce load
+            const count = tips.length;
+            const range = Math.max(count - txSpammer.tipCount, 0);
+            const pos = Math.floor(range * Math.random());
+
+            tipHashes = tips.slice(pos, pos + txSpammer.tipCount);
             this.fetchTipObjects();
         });
     };
