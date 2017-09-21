@@ -3,6 +3,8 @@
  * https://github.com/pRizz/iota-transaction-spammer-webapp
  */
 
+// Version AAA
+
 var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
     // If the owner of a public node does not want to be in the list, they can notify me to remove them.
@@ -14,7 +16,7 @@ var txSpammer = {
     // Transaction-related data
     spamSeed: "",
     hostingSite: 'https://github.com/GpanosXP/IOTA-SpammerXP',
-    tag: "SEE9SITE9IN9MESSAGE",
+    tag: "IOTA9SPAMMERXP9AAA",
     message: "",
     transfersPerBundle: 1,
     weight: 15,
@@ -32,13 +34,10 @@ var txSpammer = {
     stateTypes: {
         None:        0,
         Info:        1,
-        Error:      -1,
-        Local:       2,
-        LocalError: -2,
-        Net:         3,
-        NetError:   -3,
-        Start:       4,
-        Stop:       -4
+        Start:       2,
+        Stop:        3,
+        Local:       4,
+        Net:         5
     }
 };
 
@@ -281,7 +280,11 @@ txSpammer.worker = function(myID, myProvider)
 
     // Iota-related
 
-    var iota, _toApprove, _trytes;
+    var iota;
+    var tipHashes;
+    var tips;
+    var usefulTips;
+    var _toApprove, _trytes;
 
     this.initializeIOTA = function()
     {
@@ -293,24 +296,64 @@ txSpammer.worker = function(myID, myProvider)
         return iota;
     };
 
-    this.syncAndSend = function()
+    this.sync = function()
     {
+        if (!this.running) return this.finished();
         this.emitState(txSpammer.stateTypes.Net, "Checking if node is synced: " + myProvider);
 
-        return iota.api.getNodeInfo((error, success) => this.nodeSyncResponse(error, success));
+        const prom = iota.getNodeInfoAsync();
+        prom.catch((error) => this.emitError("Error while checking if node is synced.", error));
+        prom.then((nodeInfo) => {
+            const synced = !(
+                nodeInfo.latestMilestone == txSpammer.spamSeed ||
+                nodeInfo.latestSolidSubtangleMilestone == txSpammer.spamSeed ||
+                nodeInfo.latestSolidSubtangleMilestoneIndex < nodeInfo.latestMilestoneIndex
+            );
+            if (!synced) return this.emitError("Node is not synced.");
+
+            this.fetchTips();
+        });
     };
-    this.nodeSyncResponse = function(error, success)
+
+    this.fetchTips = function()
     {
-        if (error) return this.emitError("Unknown error while checking if node is synced.");
+        if (!this.running) return this.finished();
+        this.emitState(txSpammer.stateTypes.Net, "Fetching tip hashes");
 
-        const synced = !(
-            success.latestMilestone == txSpammer.spamSeed ||
-            success.latestSolidSubtangleMilestone == txSpammer.spamSeed ||
-            success.latestSolidSubtangleMilestoneIndex < success.latestMilestoneIndex
-        );
-        if (!synced) return this.emitError("Node is not synced.");
+        const prom = iota.getTipsAsync();
+        prom.catch((error) => this.emitError("Error while fetching tip hashes.", error));
+        prom.then((tips) => {
+            tipHashes = tips.slice(0, 200); // Cap at 200 to reduce load
+            this.fetchTipObjects();
+        });
+    };
 
-        this.prepareTx();
+    this.fetchTipObjects = function()
+    {
+        if (!this.running) return this.finished();
+        this.emitState(txSpammer.stateTypes.Net, "Fetching tip objects");
+
+        const prom = iota.getTransactionsObjectsAsync(tipHashes);
+        prom.catch((error) => this.emitError("Error while fetching tip objects.", error));
+        prom.then((txObjects) => {
+            tips = txObjects;
+            this.processTips();
+        });
+    };
+
+    this.processTips = function()
+    {
+        if (!this.running) return this.finished();
+        this.emitState(txSpammer.stateTypes.Local, "Processing tips");
+
+        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value != 0) usefulTips.push(tips[i]);
+
+        const tot = tips.length;
+        const use = useful.length;
+        var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * tot / use) / 10 + "%";
+        this.emitState(txSpammer.stateTypes.Info, message);
+
+        prepareTx();
     };
 
     this.prepareTx = function()
@@ -322,7 +365,8 @@ txSpammer.worker = function(myID, myProvider)
         prom.catch((error) => this.emitError("Error while preparing transactions.", error));
         prom.then((trytes) => {
             _trytes = trytes;
-            this.requestTxs();
+            //this.requestTxs();
+            this.pickTxs();
         });
     };
 
@@ -344,15 +388,23 @@ txSpammer.worker = function(myID, myProvider)
         const prom = iota.getTransactionsObjectsAsync([toApprove.trunkTransaction, toApprove.branchTransaction]);
         prom.catch((error) => this.attachTx(toApprove));
         prom.then((txObjects) => {
-            document.getElementById("tx_values").textContent += "\nTx values: " + txObjects[0].value + ", " + txObjects[1].value;
+            document.getElementById("tx_values").textContent += "\nTx values: " + txObjects[0].value + ", " + txObjects[1].value
+                                                                + ", tags: " + txObjects[0].tag + ", " + txObjects[1].tag;
             if (txObjects[0].value || txObjects[1].value) this.awaitToAttach(toApprove);
             else this.requestTxs();
         });
     };
 
+    this.pickTxs = function()
+    {
+        if (usefulTips.length < 2) return this.fetchTips();
+
+        this.awaitToAttach({trunkTransaction: usefulTips.pop().hash, branchTransaction: usefulTips.pop().hash});
+    };
+
     this.awaitToAttach = function(toApprove)
     {
-        this._toApprove = toApprove;
+        _toApprove = toApprove;
         txSpammer.requestJob(myID);
         this.emitState(txSpammer.stateTypes.Local, "Waiting for job vacancy in worker pool.");
     };
@@ -370,9 +422,9 @@ txSpammer.worker = function(myID, myProvider)
 
         const prom = iota.attachToTangleAsync(_toApprove.trunkTransaction, _toApprove.branchTransaction, txSpammer.weight, _trytes);
         prom.catch((error) => this.emitError("Error while attaching transactions.", error));
-        prom.then((params) => {
+        prom.then((attached) => {
             this.jobDone();
-            this.broadcastTx(params.attached);
+            this.broadcastTx(attached);
         });
     };
 
@@ -386,9 +438,9 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
 
-        const prom = iota.sendTxStep3(attached);
+        const prom = iota.storeAndBroadcastAsync(attached);
         prom.catch((error) => this.emitError("Error while broadcasting transactions.", error));
-        prom.then((params) => this.logAndFinish(params.finalTxs));
+        prom.then((finalTxs) => this.logAndFinish(finalTxs));
     };
 
     this.logAndFinish = function(finalTxs)
