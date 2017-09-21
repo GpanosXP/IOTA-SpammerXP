@@ -47,6 +47,6 @@
     IOTA.prototype.storeAndBroadcastAsync = function(trytes)
     {
         return new Promise((resolve, reject) =>
-            this.api.storeAndBroadcast(trytes, (error, finalTxs) => error ? reject(error) : resolve(finalTxs))
+            this.api.storeAndBroadcast(trytes, (error, report) => error ? reject(error) : resolve(report))
         );
     };
