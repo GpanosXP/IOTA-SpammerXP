@@ -449,9 +449,12 @@ txSpammer.worker = function(myID, myProvider)
         prom.then((report) => this.logAndFinish(attached));
     };
 
-    this.logAndFinish = function(finalTxs)
+    this.logAndFinish = function(attached)
     {
         this.emitState(txSpammer.stateTypes.Info, "Broadcast completed.");
+
+        var finalTxs = [];
+        attached.forEach((trytes) => finalTxs.push(this.iota.utils.transactionObject(trytes)));
 
         txSpammer.eventEmitter.emitEvent('transactionCompleted', [finalTxs]);
         this.finished();
