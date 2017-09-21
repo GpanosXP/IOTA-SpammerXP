@@ -114,11 +114,11 @@ document.addEventListener("DOMContentLoaded", function()
 {
     logElem = getid("eventLogContent");
 
-    getid("workerCount").textContent = 3;
+    getid("workerCount").textContent = 1;
     txSpammer.Init().then(() => {
         txSpammer.addWorker();
-        txSpammer.addWorker();
-        txSpammer.addWorker();
+//        txSpammer.addWorker();
+//        txSpammer.addWorker();
     });
 });
 

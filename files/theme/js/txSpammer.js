@@ -296,7 +296,7 @@ txSpammer.worker = function(myID, myProvider)
         return iota;
     };
 
-    this.sync = function()
+    this.syncAndSend = function()
     {
         if (!this.running) return this.finished();
         this.emitState(txSpammer.stateTypes.Net, "Checking if node is synced: " + myProvider);
