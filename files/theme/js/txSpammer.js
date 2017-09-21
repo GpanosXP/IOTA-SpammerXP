@@ -265,7 +265,7 @@ txSpammer.worker = function(myID, myProvider)
     };
     this.finished = function()
     {
-        if (this.running) this.syncAndSend();
+        if (this.running) this.prepareTx();
         else {
             this.emitState(txSpammer.stateTypes.Stop, "Stopped transaction spamming.");
             this.stopped();
@@ -315,32 +315,62 @@ txSpammer.worker = function(myID, myProvider)
 
     this.prepareTx = function()
     {
+        if (!this.running) return this.finished();
+        this.emitState(txSpammer.stateTypes.Local, "Preparing transactions");
+
+        const prom = iota.prepareTransfersAsync(txSpammer.spamSeed, txSpammer.generateTransfers(), {});
+        prom.catch((error) => this.emitError("Error while preparing transactions.", error));
+        prom.then((trytes) => {
+            _trytes = trytes;
+            this.requestTxs();
+        });
+    };
+
+    this.requestTxs = function()
+    {
+        if (!this.running) return this.finished();
         this.emitState(txSpammer.stateTypes.Net, "Requesting transactions to create confirmations for.");
 
-        const TxProm1 = iota.sendTxStep1(txSpammer.spamSeed, txSpammer.generateDepth(), txSpammer.generateTransfers());
-        TxProm1.catch((error) => this.emitError("Error while getting transactions.", error));
-        TxProm1.then((params) => {
-            this.emitState(txSpammer.stateTypes.Local, "Waiting for job vacancy in worker pool.");
-            _toApprove = params.toApprove;
-            _trytes = params.trytes;
-            txSpammer.requestJob(myID);
+        const prom = iota.getTransactionsToApproveAsync(txSpammer.generateDepth());
+        prom.catch((error) => this.emitError("Error while getting transactions to approve.", error));
+        prom.then((toApprove) => this.ensureUsefulTx(toApprove));
+    };
+
+    this.ensureUsefulTx = function(toApprove)
+    {
+        if (!this.running) return this.finished();
+        this.emitState(txSpammer.stateTypes.Net, "Ensuring transactions are useful.");
+
+        const prom = iota.getTransactionsObjectsAsync([toApprove.trunkTransaction, toApprove.branchTransaction]);
+        prom.catch((error) => this.attachTx(toApprove));
+        prom.then((txObjects) => {
+            document.getElementById("tx_values").textContent += "\nTx values: " + txObjects[0].value + ", " + txObjects[1].value;
+            if (txObjects[0].value || txObjects[1].value) this.awaitToAttach(toApprove);
+            else this.requestTxs();
         });
+    };
+
+    this.awaitToAttach = function(toApprove)
+    {
+        this._toApprove = toApprove;
+        txSpammer.requestJob(myID);
+        this.emitState(txSpammer.stateTypes.Local, "Waiting for job vacancy in worker pool.");
     };
 
     this.doJob = function()
     {
         this.working = true;
         this.emitWorking(true);
-        this.attachTx(_toApprove, _trytes);
+        this.attachTx();
     };
 
-    this.attachTx = function(toApprove, trytes)
+    this.attachTx = function()
     {
         this.emitState(txSpammer.stateTypes.Local, "Performing PoW (Proof of Work)");
 
-        const TxProm2 = iota.sendTxStep2(toApprove, txSpammer.weight, trytes);
-        TxProm2.catch((error) => this.emitError("Error while attaching transactions.", error));
-        TxProm2.then((params) => {
+        const prom = iota.attachToTangleAsync(_toApprove.trunkTransaction, _toApprove.branchTransaction, txSpammer.weight, _trytes);
+        prom.catch((error) => this.emitError("Error while attaching transactions.", error));
+        prom.then((params) => {
             this.jobDone();
             this.broadcastTx(params.attached);
         });
@@ -356,9 +386,9 @@ txSpammer.worker = function(myID, myProvider)
     {
         this.emitState(txSpammer.stateTypes.Net, "Completed PoW (Proof of Work), broadcasting confirmations.");
 
-        const TxProm3 = iota.sendTxStep3(attached);
-        TxProm3.catch((error) => this.emitError("Error while attaching transactions.", error));
-        TxProm3.then((params) => this.logAndFinish(params.finalTxs));
+        const prom = iota.sendTxStep3(attached);
+        prom.catch((error) => this.emitError("Error while broadcasting transactions.", error));
+        prom.then((params) => this.logAndFinish(params.finalTxs));
     };
 
     this.logAndFinish = function(finalTxs)
