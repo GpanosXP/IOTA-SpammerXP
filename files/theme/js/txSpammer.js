@@ -284,6 +284,7 @@ txSpammer.worker = function(myID, myProvider)
     var tipHashes = [];
     var tips = [];
     var usefulTips = [];
+    var otherTips = [];
     var _toApprove = {};
     var _trytes = "";
 
@@ -349,9 +350,13 @@ txSpammer.worker = function(myID, myProvider)
 
         const log2 = document.getElementById("log2");
         usefulTips = [];
-        for (var i = tips.length - 1; i >= 0; i--) if (tips[i].value > 1) {
-            usefulTips.push(tips[i]);
-            log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
+        otherTips = [];
+        for (var i = tips.length - 1; i >= 0; i--) {
+            if (tips[i].value > 1) {
+                usefulTips.push(tips[i]);
+                log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
+            }
+            else otherTips.push(tips[i]);
         }
 
         const tot = tips.length;
@@ -403,9 +408,9 @@ txSpammer.worker = function(myID, myProvider)
 
     this.pickTxs = function()
     {
-        if (usefulTips.length < 2) return this.fetchTips();
+        if (!usefulTips.length || !otherTips.length) return this.emitError("No more useful tips to confirm!");
 
-        this.awaitToAttach({trunkTransaction: usefulTips.pop().hash, branchTransaction: usefulTips.pop().hash});
+        this.awaitToAttach({trunkTransaction: usefulTips.pop().hash, branchTransaction: otherTips.pop().hash});
     };
 
     this.awaitToAttach = function(toApprove)
