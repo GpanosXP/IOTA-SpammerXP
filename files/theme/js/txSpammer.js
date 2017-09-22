@@ -19,6 +19,8 @@ var txSpammer = {
     transfersPerBundle: 1,
     weight: 15,
     tipCount: 1000, // tips to load for selection
+    manualTipSelection: false,
+    allowZeroValue: true,
 
     // Events
     eventEmitter: new EventEmitter(),
@@ -312,7 +314,8 @@ txSpammer.worker = function(myID, myProvider)
             );
             if (!synced) return this.emitError("Node is not synced.");
 
-            this.fetchTips();
+            if (txSpammer.manualTipSelection) this.fetchTips();
+            else this.prepareTx();
         });
     };
 
@@ -355,8 +358,7 @@ txSpammer.worker = function(myID, myProvider)
         usefulTips = [];
         otherTips = [];
         for (var i = tips.length - 1; i >= 0; i--) {
-            //if (tips[i].value != 0) {
-            if (Math.random() < 0.5) {
+            if (tips[i].value || txSpammer.allowZeroValue && Math.random() < 0.5) {
                 usefulTips.push(tips[i]);
                 log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
             }
@@ -380,8 +382,8 @@ txSpammer.worker = function(myID, myProvider)
         prom.catch((error) => this.emitError("Error while preparing transactions.", error));
         prom.then((trytes) => {
             _trytes = trytes;
-            //this.requestTxs();
-            this.pickTxs();
+            if (txSpammer.manualTipSelection) this.pickTxs();
+            else this.requestTxs();
         });
     };
 
@@ -398,6 +400,7 @@ txSpammer.worker = function(myID, myProvider)
     this.ensureUsefulTx = function(toApprove)
     {
         if (!this.running) return this.finished();
+        if (txSpammer.allowZeroValue) return this.awaitToAttach(toApprove);
         this.emitState(txSpammer.stateTypes.Net, "Ensuring transactions are useful.");
 
         const prom = iota.getTransactionsObjectsAsync([toApprove.trunkTransaction, toApprove.branchTransaction]);
