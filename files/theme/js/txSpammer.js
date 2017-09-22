@@ -3,8 +3,6 @@
  * https://github.com/pRizz/iota-transaction-spammer-webapp
  */
 
-// Version AAA
-
 var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
     // If the owner of a public node does not want to be in the list, they can notify me to remove them.
@@ -357,7 +355,8 @@ txSpammer.worker = function(myID, myProvider)
         usefulTips = [];
         otherTips = [];
         for (var i = tips.length - 1; i >= 0; i--) {
-            if (tips[i].value > 1) {
+            //if (tips[i].value != 0) {
+            if (Math.random() < 0.5) {
                 usefulTips.push(tips[i]);
                 log2.textContent += "\nValue: " + tips[i].value + ", tag: " + tips[i].tag + ", address: " + tips[i].address;
             }
@@ -367,7 +366,7 @@ txSpammer.worker = function(myID, myProvider)
         const tot = tips.length;
         const use = usefulTips.length;
         var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * use / tot) / 10 + "%";
-        this.emitState(txSpammer.stateTypes.Info, message);
+        //this.emitState(txSpammer.stateTypes.Info, message);
 
         this.prepareTx();
     };
