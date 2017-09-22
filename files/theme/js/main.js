@@ -151,6 +151,7 @@ function stop()
     txSpammer.stopAll().then(() => {
         started = false;
         clearInterval(guiIntevalID);
+        updateGUI();
         getid("btnStart").onclick = start;
         getid("btnStart").textContent = "Restart Spamming";
         getid("btnStart").classList.remove("btn-danger");
