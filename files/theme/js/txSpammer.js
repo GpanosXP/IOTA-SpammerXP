@@ -30,8 +30,8 @@ var txSpammer = {
     workerJobs: [],
     workerPool: new Pool(),
     workingCounter: 0,
-    workerRemovePromise,
-    workerRemoveAllPromise,
+    workerRemovePromise: undefined,
+    workerRemoveAllPromise: undefined,
 
     // Enums and misc
     stateTypes: {
