@@ -117,12 +117,7 @@ document.addEventListener("DOMContentLoaded", function()
 {
     logElem = getid("eventLogContent");
 
-    getid("workerCount").textContent = 2;
-    txSpammer.Init().then(() => {
-        txSpammer.addWorker();
-        txSpammer.addWorker();
-//        txSpammer.addWorker();
-    });
+    txSpammer.Init();
 });
 
 var guiIntevalID;
@@ -134,21 +129,44 @@ function start()
     getid("btnStart").classList.remove("btn-success");
     getid("btnStart").classList.add("btn-danger");
 
+    txSpammer.tipCount = 100;
+    txSpammer.manualTipSelection = false;
+    txSpammer.allowZeroValue = true;
+
+    getid("workerCount").textContent = 2;
+    txSpammer.addWorker();
+    txSpammer.addWorker();
+//    txSpammer.addWorker();
     txSpammer.startAll();
+
     txCounter = 0;
     guiIntevalID = setInterval(updateGUI, 1000);
 }
 
 function startLocal()
 {
-    alert("Local spamming comming soon");
+    getid("btnStart").disabled = true;
+    getid("btnStartLocal").onclick = stopLocal;
+    getid("btnStartLocal").textContent = "Stop Spamming";
+    getid("btnStartLocal").classList.remove("btn-success");
+    getid("btnStartLocal").classList.add("btn-danger");
+
+    txSpammer.tipCount = 1000;
+    txSpammer.manualTipSelection = true;
+    txSpammer.allowZeroValue = true;
+
+    getid("workerCount").textContent = "1 Local";
+    txSpammer.addWorker("http://127.0.0.1:14265").startSpamming();
+
+    txCounter = 0;
+    guiIntevalID = setInterval(updateGUI, 1000);
 }
 
 function stop()
 {
     getid("btnStart").disabled = true;
     getid("btnStart").textContent = "Stopping ...";
-    txSpammer.stopAll().then(() => {
+    txSpammer.removeAll().then(() => {
         started = false;
         clearInterval(guiIntevalID);
         updateGUI();
@@ -158,5 +176,24 @@ function stop()
         getid("btnStart").classList.add("btn-success");
         getid("btnStart").disabled = false;
         getid("btnStartLocal").disabled = false;
+        getid("workerCount").textContent = 0;
+    });
+}
+
+function stopLocal()
+{
+    getid("btnStartLocal").disabled = true;
+    getid("btnStartLocal").textContent = "Stopping ...";
+    txSpammer.removeAll().then(() => {
+        started = false;
+        clearInterval(guiIntevalID);
+        updateGUI();
+        getid("btnStartLocal").onclick = startLocal;
+        getid("btnStartLocal").textContent = "Restart Local Spamming";
+        getid("btnStartLocal").classList.remove("btn-danger");
+        getid("btnStartLocal").classList.add("btn-success");
+        getid("btnStartLocal").disabled = false;
+        getid("btnStart").disabled = false;
+        getid("workerCount").textContent = 0;
     });
 }
