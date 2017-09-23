@@ -17,7 +17,7 @@ var txSpammer = {
     tag: "IOTA9SPAMMERXP9AAB",
     message: "",
     transfersPerBundle: 1,
-    weight: 15,
+    weight: 14,
     tipCount: 1000, // tips to load for selection
     manualTipSelection: false,
     allowZeroValue: true,
@@ -399,7 +399,7 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
         const tot = tips.length;
         const use = usefulTips.length;
         var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * use / tot) / 10 + "%";
-        //this.emitState(txSpammer.stateTypes.Info, message);
+        if (!txSpammer.allowZeroValue) this.emitState(txSpammer.stateTypes.Info, message);
 
         this.prepareTx();
     };
