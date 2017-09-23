@@ -30,6 +30,8 @@ var txSpammer = {
     workerJobs: [],
     workerPool: new Pool(),
     workingCounter: 0,
+    workerRemovePromise,
+    workerRemoveAllPromise,
 
     // Enums and misc
     stateTypes: {
@@ -132,37 +134,44 @@ var txSpammer = {
         return counter;
     }
 
-    txSpammer.addWorker = function()
+    txSpammer.addWorker = function(provider)
     {
         const id = this.workers.length;
         this.workers.push(undefined);
         this.workerJobs.push(undefined);
-        return this.createWorker(id);
+        return this.createWorker(id, provider);
     }
 
     txSpammer.removeWorker = function()
     {
-        const id = this.workers.length - 1;
-        if (id < 0) return false
+        if (this.workerRemovePromise) return this.workerRemovePromise;
 
-        return this.workers[id].stopSpamming().then((claimedID) => {
+        const id = this.workers.length - 1;
+        if (id < 0) return Promise.reject();
+
+        this.workerRemovePromise = this.workers[id].stopSpamming().then((claimedID) => {
             this.workers.pop();
             this.workerJobs.pop();
+            this.workerRemovePromise = undefined;
         });
+
+        return this.workerRemovePromise;
     }
 
-    txSpammer.createWorker = function(id)
+    txSpammer.createWorker = function(id, provider)
     {
         if (!(id < this.workers.length) || this.workers[id]) return false;
 
-        const newWorker = new this.worker(id, this.getRandomProvider());
+        provider = provider || this.getRandomProvider();
+
+        const newWorker = new this.worker(id, provider);
         this.workers[id] = newWorker;
         return newWorker;
     }
 
     txSpammer.replaceWorker = function(id)
     {
-        if (!(id < this.workers.length)) return false;
+        if (!(id < this.workers.length)) return Promise.reject();
 
         return new Promise((resolve, reject) => {
             if (this.workers[id]) {
@@ -180,8 +189,7 @@ var txSpammer = {
     {
         for (var i = 0; i < this.workers.length; i++) this.workers[i].startSpamming();
     }
-    // Tells all workers to stop and returns a promise
-    // that is resolved when all workers have stopped.
+
     txSpammer.stopAll = function()
     {
         const count = this.workers.length;
@@ -190,6 +198,25 @@ var txSpammer = {
         for (var i = 0; i < count; i++) promises[i] = this.workers[i].stopSpamming();
 
         return Promise.all(promises);
+    }
+
+    txSpammer._removeAll = function(resolve)
+    {
+        if (!this.workers.length) return resolve();
+
+        this.removeWorker().then(() => {
+            txSpammer._removeAll(resolve);
+        });
+    }
+    txSpammer.removeAll = function()
+    {
+        if (!this.workerRemoveAllPromise) {
+            this.workerRemoveAllPromise = new Promise((resolve, reject) => {
+                this.stopAll().then(() => this._removeAll(resolve));
+            });
+        }
+
+        return this.workerRemoveAllPromise;
     }
 
     txSpammer.setPoolSize = function(newSize)
