@@ -162,9 +162,10 @@ var txSpammer = {
     {
         if (!(id < this.workers.length) || this.workers[id]) return false;
 
-        provider = provider || this.getRandomProvider();
+        const forcedProvider = !!provider;
+        if (!forcedProvider) provider = this.getRandomProvider();
 
-        const newWorker = new this.worker(id, provider);
+        const newWorker = new this.worker(id, provider, forcedProvider);
         this.workers[id] = newWorker;
         return newWorker;
     }
@@ -177,8 +178,10 @@ var txSpammer = {
             if (this.workers[id]) {
                 this.workers[id].stopSpamming().then((claimedID) => {
 
+                    const provider = this.workers[id].forcedProvider ? this.workers[id].provider : undefined;
+
                     this.workers[id] = undefined; // delete old worker
-                    resolve(this.createWorker(id));
+                    resolve(this.createWorker(id, provider));
                 });
             }
             else resolve(this.createWorker(id));
@@ -239,10 +242,11 @@ var txSpammer = {
     }
 
 /// Worker class
-txSpammer.worker = function(myID, myProvider)
+txSpammer.worker = function(myID, myProvider, forcedProvider)
 {
     this.ID = myID;
     this.provider = myProvider;
+    this.forcedProvider = forcedProvider;
 
     this.running = false;
 
