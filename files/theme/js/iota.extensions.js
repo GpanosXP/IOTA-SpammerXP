@@ -1,4 +1,6 @@
 // Iota api extensions
+// for IOTA SpammerXP
+// https://github.com/GpanosXP/IOTA-SpammerXP
 
 /// Promisified version of IOTA api functions
 

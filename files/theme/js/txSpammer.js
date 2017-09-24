@@ -1,7 +1,7 @@
-/**
- * Based upon the projust created by Peter Ryszkiewicz (https://github.com/pRizz) on 9/10/2017:
- * https://github.com/pRizz/iota-transaction-spammer-webapp
- */
+// IOTA SpammerXP
+// https://github.com/GpanosXP/IOTA-SpammerXP
+// Based upon the projust created by Peter Ryszkiewicz:
+// https://github.com/pRizz/iota-transaction-spammer-webapp
 
 var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
@@ -14,7 +14,7 @@ var txSpammer = {
     // Transaction-related data
     spamSeed: "",
     hostingSite: 'https://github.com/GpanosXP/IOTA-SpammerXP',
-    tag: "IOTA9SPAMMERXP9AAB",
+    tag: "IOTA9SPAMMERXP9AAC",
     message: "",
     transfersPerBundle: 1,
     weight: 14,

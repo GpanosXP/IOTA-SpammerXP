@@ -1,7 +1,7 @@
-/**
- * Based upon the projust created by Peter Ryszkiewicz (https://github.com/pRizz) on 9/10/2017:
- * https://github.com/pRizz/iota-transaction-spammer-webapp
- */
+// IOTA SpammerXP
+// https://github.com/GpanosXP/IOTA-SpammerXP
+// Based upon the projust created by Peter Ryszkiewicz:
+// https://github.com/pRizz/iota-transaction-spammer-webapp
 
 /// Helper functons
 
