@@ -253,6 +253,7 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
     this.forcedProvider = forcedProvider;
 
     this.running = false;
+    this.noKill = false;
 
     var stopPromise, stopPromiseResolve;
 
@@ -266,6 +267,7 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
         txSpammer.emitError(myID, message);
 
         this.running = false;
+        this.noKill = false;
         this.stopped();
 
         return false; // Return a "negative" signal
@@ -288,8 +290,9 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
     {
         if (stopPromise) return stopPromise;
 
-        if (!this.running) return Promise.resolve(myID);
+        var immediate = !this.running || !this.noKill;
         this.running = false;
+        if (immediate) return Promise.resolve(myID);
 
         stopPromise = new Promise((resolve) => stopPromiseResolve = resolve);
         return stopPromise;
@@ -300,6 +303,7 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
     };
     this.finished = function()
     {
+        this.noKill = false;
         if (this.running) this.prepareTx();
         else {
             this.emitState(txSpammer.stateTypes.Stop, "Stopped transaction spamming.");
@@ -471,6 +475,7 @@ txSpammer.worker = function(myID, myProvider, forcedProvider)
             return;
         }
 
+        this.noKill = true;
         this.emitWorking(true);
         this.attachTx();
     };
