@@ -4,6 +4,6 @@ http://spammerxp.weebly.com/
 
 Whether you run it on the above address or locally, currently there is no impact on performance (all hosts are supported, even non-https).
 
-Current version code: AAB
+Current version code: AAC
 
-Current tag: IOTA9SPAMMERXP9AAB
+Current tag: 99IOTA9SPAMMERXP9AAC
