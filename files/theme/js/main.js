@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function()
     txSpammer.Init().then(() => {
         txSpammer.addWorker();
         txSpammer.addWorker();
-//        txSpammer.addWorker();
+        txSpammer.addWorker();
     });
 });
 
