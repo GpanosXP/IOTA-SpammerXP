@@ -44,7 +44,7 @@
     {
         const totalTime = Date.now() - startMilliseconds;
         getid("timeSpentSpamming").innerText = msToHHMMSS(totalTime);
-        getid("averageConfirmationDuration").innerText = "?"; // TODO
+        getid("averageConfirmationDuration").innerText = (totalTime / (txCounter * 2000)).toFixed(1);
         getid("confirmationCount").innerText = txCounter * 2;
         getid("cpmCount").innerText = (txCounter * 120000 / totalTime).toFixed(3);
     }
