@@ -1,7 +1,7 @@
-/**
- * Based upon the projust created by Peter Ryszkiewicz (https://github.com/pRizz) on 9/10/2017:
- * https://github.com/pRizz/iota-transaction-spammer-webapp
- */
+// IOTA SpammerXP
+// https://github.com/GpanosXP/IOTA-SpammerXP
+// Based upon the projust created by Peter Ryszkiewicz:
+// https://github.com/pRizz/iota-transaction-spammer-webapp
 
 var txSpammer = {
     // Providers are fetched to keep them dynamic and load balance the network.
@@ -30,6 +30,8 @@ var txSpammer = {
     workerJobs: [],
     workerPool: new Pool(),
     workingCounter: 0,
+    workerRemovePromise: undefined,
+    workerRemoveAllPromise: undefined,
 
     // Enums and misc
     stateTypes: {
@@ -132,44 +134,54 @@ var txSpammer = {
         return counter;
     }
 
-    txSpammer.addWorker = function()
+    txSpammer.addWorker = function(provider)
     {
         const id = this.workers.length;
         this.workers.push(undefined);
         this.workerJobs.push(undefined);
-        return this.createWorker(id);
+        return this.createWorker(id, provider);
     }
 
     txSpammer.removeWorker = function()
     {
-        const id = this.workers.length - 1;
-        if (id < 0) return false
+        if (this.workerRemovePromise) return this.workerRemovePromise;
 
-        return this.workers[id].stopSpamming().then((claimedID) => {
+        const id = this.workers.length - 1;
+        if (id < 0) return Promise.reject();
+
+        this.workerRemovePromise = this.workers[id].stopSpamming().then((claimedID) => {
             this.workers.pop();
             this.workerJobs.pop();
+            this.workerRemovePromise = undefined;
         });
+
+        return this.workerRemovePromise;
     }
 
-    txSpammer.createWorker = function(id)
+    txSpammer.createWorker = function(id, provider)
     {
         if (!(id < this.workers.length) || this.workers[id]) return false;
 
-        const newWorker = new this.worker(id, this.getRandomProvider());
+        const forcedProvider = !!provider;
+        if (!forcedProvider) provider = this.getRandomProvider();
+
+        const newWorker = new this.worker(id, provider, forcedProvider);
         this.workers[id] = newWorker;
         return newWorker;
     }
 
     txSpammer.replaceWorker = function(id)
     {
-        if (!(id < this.workers.length)) return false;
+        if (!(id < this.workers.length)) return Promise.reject();
 
         return new Promise((resolve, reject) => {
             if (this.workers[id]) {
                 this.workers[id].stopSpamming().then((claimedID) => {
 
+                    const provider = this.workers[id].forcedProvider ? this.workers[id].provider : undefined;
+
                     this.workers[id] = undefined; // delete old worker
-                    resolve(this.createWorker(id));
+                    resolve(this.createWorker(id, provider));
                 });
             }
             else resolve(this.createWorker(id));
@@ -192,6 +204,25 @@ var txSpammer = {
         return Promise.all(promises);
     }
 
+    txSpammer._removeAll = function(resolve)
+    {
+        if (!this.workers.length) return resolve();
+
+        this.removeWorker().then(() => {
+            txSpammer._removeAll(resolve);
+        });
+    }
+    txSpammer.removeAll = function()
+    {
+        if (!this.workerRemoveAllPromise) {
+            this.workerRemoveAllPromise = new Promise((resolve, reject) => {
+                this.stopAll().then(() => this._removeAll(resolve));
+            });
+        }
+
+        return this.workerRemoveAllPromise;
+    }
+
     txSpammer.setPoolSize = function(newSize)
     {
         const dif = newSize - this.workerPool.count;
@@ -212,10 +243,11 @@ var txSpammer = {
     }
 
 /// Worker class
-txSpammer.worker = function(myID, myProvider)
+txSpammer.worker = function(myID, myProvider, forcedProvider)
 {
     this.ID = myID;
     this.provider = myProvider;
+    this.forcedProvider = forcedProvider;
 
     this.running = false;
 
@@ -369,7 +401,7 @@ txSpammer.worker = function(myID, myProvider)
         const tot = tips.length;
         const use = usefulTips.length;
         var message = "Tips processed, results: " + tot + " total, " + use + " useful, " + Math.round(1000 * use / tot) / 10 + "%";
-        //this.emitState(txSpammer.stateTypes.Info, message);
+        if (!txSpammer.allowZeroValue) this.emitState(txSpammer.stateTypes.Info, message);
 
         this.prepareTx();
     };
