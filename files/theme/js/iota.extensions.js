@@ -40,7 +40,7 @@
     IOTA.prototype.attachToTangleAsync = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes)
     {
         return new Promise((resolve, reject) =>
-            this.api.attachToTangle(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, (error, attached) => error ? reject(error) : resolve(attached))
+            this.localAttachToTangle(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, (error, attached) => error ? reject(error) : resolve(attached))
         );
     };
 
@@ -54,11 +54,10 @@
 /// Local PoW wrapper function
 
     const MAX_TIMESTAMP_VALUE = (Math.pow(3,27) - 1) / 2 // from curl.min.js
-
     // adapted from https://github.com/iotaledger/wallet/blob/master/ui/js/iota.lightwallet.js
-    const localAttachToTangle = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, callback) {
+    IOTA.prototype.localAttachToTangle = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, callback) {
+        const iotaObj = this;
         const ccurlHashing = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, callback) {
-            const iotaObj = iota;
 
             // inputValidator: Check if correct hash
             if (!iotaObj.valid.isHash(trunkTransaction)) {
@@ -143,15 +142,9 @@
         }
 
         ccurlHashing(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, function(error, success) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log(success);
-            }
-            if (callback) {
-                return callback(error, success);
-            } else {
-                return success;
-            }
-        })
+            if (error) console.log(error);
+            else console.log(success);
+            if (callback) return callback(error, success);
+            else return success;
+        });
     }

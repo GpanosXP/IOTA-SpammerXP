@@ -295,7 +295,7 @@ txSpammer.worker = function(myID, myProvider)
 
         iota = new IOTA({'provider': myProvider});
         //curl.overrideAttachToTangle(iota.api); // Not working after last iota update
-        iota.api.attachToTangle = localAttachToTangle; // The new PoW function (same as used in the wallet)
+        // The new PoW function (same as in the wallet) is implemented in "iota.extensions.js"
 
         return iota;
     };
