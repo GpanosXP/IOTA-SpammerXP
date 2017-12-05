@@ -206,7 +206,10 @@ var txSpammer = {
 
     txSpammer._removeAll = function(resolve)
     {
-        if (!this.workers.length) return resolve();
+        if (!this.workers.length) {
+            this.workerRemoveAllPromise = undefined;
+            return resolve();
+        }
 
         this.removeWorker().then(() => {
             txSpammer._removeAll(resolve);
