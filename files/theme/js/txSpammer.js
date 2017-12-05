@@ -17,7 +17,7 @@ var txSpammer = {
     tag: "IOTA9SPAMMERXP9AAB",
     message: "",
     transfersPerBundle: 1,
-    weight: 15,
+    weight: 14,
     tipCount: 1000, // tips to load for selection
     manualTipSelection: false,
     allowZeroValue: true,
@@ -294,7 +294,8 @@ txSpammer.worker = function(myID, myProvider)
         this.emitState(txSpammer.stateTypes.Info, "Initializing IOTA library.");
 
         iota = new IOTA({'provider': myProvider});
-        curl.overrideAttachToTangle(iota.api);
+        //curl.overrideAttachToTangle(iota.api); // Not working after last iota update
+        iota.api.attachToTangle = localAttachToTangle; // The new PoW function (same as used in the wallet)
 
         return iota;
     };
