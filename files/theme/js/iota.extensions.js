@@ -54,6 +54,8 @@
 /// Local PoW wrapper function
 
     const MAX_TIMESTAMP_VALUE = (Math.pow(3,27) - 1) / 2 // from curl.min.js
+    curl.init();
+
     // adapted from https://github.com/iotaledger/wallet/blob/master/ui/js/iota.lightwallet.js
     IOTA.prototype.localAttachToTangle = function(trunkTransaction, branchTransaction, minWeightMagnitude, trytes, callback) {
         const iotaObj = this;
